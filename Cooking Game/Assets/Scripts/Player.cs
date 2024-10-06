@@ -11,8 +11,20 @@ public class Player : MonoBehaviour{
     [SerializeField] private float playerHeight = 2f;
     [SerializeField] private float interactDistance = 2f;
     [SerializeField] private LayerMask layerMask;
+
+    private ClearCounter selectedCounter;
     private Vector3 lastMoveDir;
     private bool isWalking;
+
+    private void Start() {
+        gameInput.OnInteractAction += GameInput_OnInteractAction;
+    }
+
+    private void GameInput_OnInteractAction(object sender, System.EventArgs e) {
+        if(selectedCounter != null) {
+            selectedCounter.Interact();
+        }
+    }
 
     private void Update() {
         HandleMovement();
@@ -27,19 +39,27 @@ public class Player : MonoBehaviour{
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
         Vector3 moveDir = new Vector3(inputVector.x, 0, inputVector.y);
 
-        if(moveDir != Vector3.zero) {
+        if (moveDir != Vector3.zero) {
             lastMoveDir = moveDir;
         }
 
         //CHECK IF THE PLAYER COLLIDES WITH CLEAR COUNTER OBJECT AND IF IT HAS THE CLEAR COUNTER SCRIPT
-        if(Physics.Raycast(transform.position, lastMoveDir, out RaycastHit raycastHit, interactDistance, layerMask)) {
+        if (Physics.Raycast(transform.position, lastMoveDir, out RaycastHit raycastHit, interactDistance, layerMask)) {
             if (raycastHit.transform.TryGetComponent(out ClearCounter clearCounter)) {
                 //HAS CLEARCOUNTER
                 //ACCESS ITS FUNCTION
-                clearCounter.Interact();
+                if (clearCounter != selectedCounter) {
+                    selectedCounter = clearCounter;
+                }
+            }
+            else {
+                selectedCounter = null;
             }
         }
-
+        else {
+            selectedCounter = null;
+        }
+        Debug.Log(selectedCounter);
     }
 
     private void HandleMovement() {
