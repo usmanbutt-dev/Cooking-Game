@@ -16,13 +16,11 @@ public class GameInput : MonoBehaviour
 
     private void Interact_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj) {
         OnInteractAction?.Invoke(this, EventArgs.Empty);
-        Debug.Log(obj);
     }
 
     public Vector2 GetMovementVectorNormalized() {
         //TAKING INPUT
         Vector2 inputVector = playerInputActions.Player.Move.ReadValue<Vector2>();
-
 
         //PROCESSING THE INPUT (IF NEEDED)
         inputVector = inputVector.normalized;

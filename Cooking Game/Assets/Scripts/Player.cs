@@ -1,8 +1,14 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour{
+
+    //MAKING A PROPERTY TO USE SINGLETON PATTERN
+    //A PROPERTY AND IT IS STATIC SO IT WILL BE SHARED WITH EVERY INSTANCE OF PLAYER (CURRENTLY SINGLE PLAYER SO OK)
+    //ALSO USING AWAKE FOR THE SAME REASON, TO CHECK NO MORE THAN ONE PLAYER EXISTS ON AWAKE, AND THEN SET TO INSTANCE IF NOT
+    public static Player Instance { get; private set; }
 
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private float rotateSpeed = 10f;
@@ -16,11 +22,30 @@ public class Player : MonoBehaviour{
     private Vector3 lastMoveDir;
     private bool isWalking;
 
+    //EVENT TO FIRE WHEN A COUNTER IS SELECTED (TO CHANGE ITS VISUAL)
+    //THEN CREATING EVENT ARGS FOR IT AND USING IT IN IT
+    //THEN WE'LL FIRE THIS EVENT WITH THE SELECTED COUNTER GIVEN IN ITS ARGS
+    public event EventHandler<OnSelectCounterChangeEventArgs> OnSelectCounterChange;
+
+    public class OnSelectCounterChangeEventArgs :EventArgs {
+        public ClearCounter selectedCounter;
+    }
+
+    private void Awake() {
+        if(Instance != null) {
+            Debug.LogError("There is more than one player Instance!");
+        }
+        else {
+            Instance = this;
+        }
+    }
+
     private void Start() {
         gameInput.OnInteractAction += GameInput_OnInteractAction;
     }
 
     private void GameInput_OnInteractAction(object sender, System.EventArgs e) {
+        //IF SELECTED COUNTER HAS A COUNTER IN IT THEN PLAYER HAS INTERACTED WITH A COUNTER SO EXECUTE ITS INTERACT FUNCTION
         if(selectedCounter != null) {
             selectedCounter.Interact();
         }
@@ -47,19 +72,26 @@ public class Player : MonoBehaviour{
         if (Physics.Raycast(transform.position, lastMoveDir, out RaycastHit raycastHit, interactDistance, layerMask)) {
             if (raycastHit.transform.TryGetComponent(out ClearCounter clearCounter)) {
                 //HAS CLEARCOUNTER
-                //ACCESS ITS FUNCTION
+                //STORE IT IN SELECTEDCOUNTER SO WE CAN PERFORM THE ACTION FROM THE SELECTEDCOUNTER
                 if (clearCounter != selectedCounter) {
                     selectedCounter = clearCounter;
+                    //NOW FIRE OFF THE EVENT TO CHANGE VISUAL, WITH THIS SELECTEDCOUNTER AS ITS ARGS
+                    SetSelectedCounter(selectedCounter);
                 }
-            }
+            }   //DOESN'T HAVE CLEARCOUNTER
+                //STORE NULL IN SELECTEDCOUNTER, TO LET THE PLAYER KNOW NO COUNTER IS IN FRONT AND MAKE IT UNABLE TO INTERACT WITH ANY
+                //NOW FIRE OFF THE EVENT WITH NULL BEACAUSE NO COUNTER IS SELECTED
             else {
                 selectedCounter = null;
+                SetSelectedCounter(null);
             }
-        }
+        }       //DOESN'T HAVE CLEARCOUNTER
+                //STORE NULL IN SELECTEDCOUNTER, TO LET THE PLAYER KNOW NO COUNTER IS IN FRONT AND MAKE IT UNABLE TO INTERACT WITH ANY
+                //NOW FIRE OFF THE EVENT WITH NULL BEACAUSE NO COUNTER IS SELECTED
         else {
             selectedCounter = null;
+            SetSelectedCounter(null);
         }
-        Debug.Log(selectedCounter);
     }
 
     private void HandleMovement() {
@@ -106,6 +138,16 @@ public class Player : MonoBehaviour{
         isWalking = (moveDir != Vector3.zero);
 
         //ROTATING THE OBJECT TO FACE THE DIRECTION IT IS MOVING IN
-        transform.forward = Vector3.Slerp(transform.forward, moveDir, rotateSpeed * Time.deltaTime);
+        if (moveDir != Vector3.zero) {
+            transform.forward = Vector3.Slerp(transform.forward, moveDir, rotateSpeed * Time.deltaTime);
+        }
+    }
+
+    //PASSING REFERENCE HERE BECAUSE WE WANT TO CALL IT WITH EITHER A CLEARCOUNTER, OR A NULL
+    private void SetSelectedCounter(ClearCounter selectedCounter) {
+        this.selectedCounter = selectedCounter;
+        OnSelectCounterChange?.Invoke(this, new OnSelectCounterChangeEventArgs{
+            selectedCounter = this.selectedCounter
+        });
     }
 }
