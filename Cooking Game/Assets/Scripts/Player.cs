@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Player : MonoBehaviour{
+public class Player : MonoBehaviour, IKitchenObjectParent{
 
     //MAKING A PROPERTY TO USE SINGLETON PATTERN
     //A PROPERTY AND IT IS STATIC SO IT WILL BE SHARED WITH EVERY INSTANCE OF PLAYER (CURRENTLY SINGLE PLAYER SO OK)
@@ -21,6 +21,9 @@ public class Player : MonoBehaviour{
     private ClearCounter selectedCounter;
     private Vector3 lastMoveDir;
     private bool isWalking;
+
+    [SerializeField] private Transform kitchenObjectHoldPoint;
+    private KitchenObject kitchenObject;
 
     //EVENT TO FIRE WHEN A COUNTER IS SELECTED (TO CHANGE ITS VISUAL)
     //THEN CREATING EVENT ARGS FOR IT AND USING IT IN IT
@@ -47,7 +50,7 @@ public class Player : MonoBehaviour{
     private void GameInput_OnInteractAction(object sender, System.EventArgs e) {
         //IF SELECTED COUNTER HAS A COUNTER IN IT THEN PLAYER HAS INTERACTED WITH A COUNTER SO EXECUTE ITS INTERACT FUNCTION
         if(selectedCounter != null) {
-            selectedCounter.Interact();
+            selectedCounter.Interact(this);
         }
     }
 
@@ -149,5 +152,25 @@ public class Player : MonoBehaviour{
         OnSelectCounterChange?.Invoke(this, new OnSelectCounterChangeEventArgs{
             selectedCounter = this.selectedCounter
         });
+    }
+
+    public Transform GetCounterTopPoint() {
+        return kitchenObjectHoldPoint;
+    }
+
+    public KitchenObject GetKitchenObject() {
+        return kitchenObject;
+    }
+
+    public void SetKitchenObject(KitchenObject kitchenObject) {
+        this.kitchenObject = kitchenObject;
+    }
+
+    public void ClearKitchenObject() {
+        kitchenObject = null;
+    }
+
+    public bool HasKitchenObject() {
+        return kitchenObject != null;
     }
 }
